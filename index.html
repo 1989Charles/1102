@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown 公式阅读器</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #1d2940; background: #f3f5fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { background: white; border-bottom: 1px solid #e1e6ef; padding: 18px 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .brand { display: flex; gap: 13px; align-items: center; }
+    .logo { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 13px; background: #e9edff; color: #4c5bd4; font: bold 25px Georgia, serif; }
+    h1 { margin: 0; font-size: 19px; letter-spacing: .02em; }
+    .subtitle { margin: 4px 0 0; font-size: 12px; color: #8290a5; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .button { border: 1px solid #dce2ed; background: white; border-radius: 8px; color: #39465d; padding: 9px 13px; font-size: 13px; font-weight: 600; }
+    .button:hover { background: #f6f8fc; }
+    .primary { background: #5365d9; border-color: #5365d9; color: white; }
+    .primary:hover { background: #4556c4; }
+    .workspace { max-width: 1680px; margin: 0 auto; padding: 20px 28px 12px; }
+    .notice { display: none; padding: 11px 14px; margin-bottom: 14px; border-radius: 8px; color: #913c28; background: #fff0e9; font-size: 13px; line-height: 1.6; }
+    .notice.visible { display: block; }
+    .panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .panel { min-width: 0; overflow: hidden; background: white; border: 1px solid #e0e6ef; border-radius: 12px; box-shadow: 0 4px 18px #283b6310; }
+    .panel-heading { height: 52px; padding: 0 18px; border-bottom: 1px solid #edf0f5; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-heading strong { font-size: 14px; }
+    .panel-heading span { color: #91a0b3; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .panel-body { height: calc(100vh - 230px); min-height: 480px; }
+    textarea { width: 100%; height: 100%; border: 0; resize: none; outline: none; padding: 22px; color: #35435b; background: #fbfcfe; line-height: 1.7; font-family: Consolas, "Microsoft YaHei", monospace; font-size: 14px; tab-size: 2; }
+    .preview { height: 100%; overflow: auto; padding: 24px 30px; overflow-wrap: anywhere; }
+    .preview h1, .preview h2, .preview h3 { color: #202d45; line-height: 1.35; }
+    .preview h1 { font-size: 28px; border-bottom: 1px solid #e9edf3; padding-bottom: 14px; }
+    .preview h2 { font-size: 21px; margin-top: 1.7em; }
+    .preview h3 { font-size: 17px; }
+    .preview p, .preview li { line-height: 1.85; }
+    .preview a { color: #4b5ed0; }
+    .preview blockquote { margin: 1em 0; padding: 2px 16px; border-left: 4px solid #bcc6f6; color: #6c7890; background: #f8f9ff; }
+    .preview pre { background: #f4f6fa; border-radius: 8px; padding: 16px; overflow: auto; }
+    .preview code { font-family: Consolas, monospace; font-size: .9em; }
+    .preview :not(pre) > code { background: #f0f2f7; border-radius: 4px; padding: 2px 5px; }
+    .preview table { border-collapse: collapse; display: block; max-width: 100%; overflow: auto; }
+    .preview th, .preview td { border: 1px solid #dfe5ee; padding: 8px 12px; }
+    .preview th { background: #f6f8fc; }
+    .preview img { max-width: 100%; }
+    .preview .katex-display { overflow-x: auto; overflow-y: hidden; padding: 5px 0; }
+    .math-formula { cursor: copy; border-radius: 3px; }
+    .math-formula.math-block { display: block; max-width: 100%; }
+    .math-formula:hover, .math-formula:focus-visible { outline: 2px solid #c2caf7; outline-offset: 3px; background: #f4f6ff; }
+    .toast { position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 12px); padding: 11px 18px; border-radius: 9px; background: #28364f; color: white; font-size: 13px; box-shadow: 0 5px 20px #283b6330; opacity: 0; visibility: hidden; transition: opacity .15s, transform .15s; pointer-events: none; z-index: 10; max-width: calc(100vw - 32px); }
+    .toast.visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+    .clipboard-helper { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; opacity: 0; pointer-events: none; }
+    .foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 2px; color: #8995a8; font-size: 12px; }
+    .drop-active { outline: 3px dashed #8795ed; outline-offset: -6px; }
+    @media (max-width: 800px) { .topbar { padding: 16px; } .workspace { padding: 16px; } .panels { grid-template-columns: 1fr; } .panel-body { height: 48vh; min-height: 300px; } .preview { padding: 20px; } }
+    @media print { .topbar, .editor-panel, .foot, .notice, .panel-heading, .toast { display: none !important; } .workspace { padding: 0; } .panels { display: block; } .panel { border: 0; box-shadow: none; } .panel-body { height: auto; } .preview { overflow: visible; padding: 0; } .math-formula { outline: none !important; background: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">∑</div><div><h1>Markdown 公式阅读器</h1><p class="subtitle">把文字与公式，变成清晰的阅读体验</p></div></div>
+    <div class="actions">
+      <input id="file" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+      <button class="button primary" id="open" type="button">打开 Markdown</button>
+      <button class="button" id="save" type="button">保存 Markdown</button>
+      <button class="button" id="print" type="button">打印 / 保存 PDF</button>
+      <button class="button" id="example" type="button">载入示例</button>
+    </div>
+  </header>
+  <main class="workspace">
+    <div id="notice" class="notice" role="alert"></div>
+    <div class="panels" id="panels">
+      <section class="panel editor-panel"><div class="panel-heading"><strong>✎ &nbsp;Markdown 编辑</strong><span id="filename">未命名.md</span></div><div class="panel-body"><textarea id="editor" spellcheck="false" aria-label="Markdown 编辑区"></textarea></div></section>
+      <section class="panel"><div class="panel-heading"><strong>◉ &nbsp;实时预览</strong><span>Markdown + KaTeX</span></div><div class="panel-body"><article id="preview" class="preview"></article></div></section>
+    </div>
+    <div class="foot"><span>支持拖放 .md 文件 · 单击公式复制 LaTeX · 文件内容在本地处理</span><span>行内：$公式$ 或 \(公式\)　·　独立：$$公式$$ 或 \[公式\]</span></div>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script>
+    const example = String.raw`# 欢迎使用公式阅读器
+
+在左侧输入 Markdown，或点击右上角 **打开 Markdown**，也可以将文件拖入页面。
+
+## 行内公式
+
+正态分布记作 $X \sim \mathcal{N}(\mu, \sigma^2)$，欧拉公式是 \(e^{i\pi}+1=0\)。
+
+## 独立公式
+
+$$
+f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}
+e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+$$
+
+也支持另一种写法：
+
+\[
+\int_0^1 x^2\,dx = \frac{1}{3}
+\]
+
+## Markdown 内容
+
+- 支持标题、列表、引用、表格和代码块。
+- 可以直接编辑内容，再保存为 Markdown 或打印为 PDF。
+- 单击右侧任意公式，即可复制其原始 LaTeX 代码（不含公式分隔符）。
+
+> 公式使用 LaTeX 语法。代码块中的 $x$ 不会被渲染。
+
+| 符号 | 含义 |
+| --- | --- |
+| $\mu$ | 均值 |
+| $\sigma^2$ | 方差 |
+`;
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const fileInput = document.getElementById('file');
+    const filename = document.getElementById('filename');
+    const notice = document.getElementById('notice');
+    const toast = document.getElementById('toast');
+    let currentName = '未命名.md';
+    let formulaSources = new Map();
+    let formulaCounter = 0;
+    let toastTimer;
+
+    function showNotice(message) {
+      notice.textContent = message;
+      notice.classList.toggle('visible', Boolean(message));
+    }
+    function findEnd(source, delimiter, from) {
+      let index = from;
+      while ((index = source.indexOf(delimiter, index)) !== -1) {
+        let slashes = 0;
+        for (let i = index - 1; i >= 0 && source[i] === '\\'; i--) slashes++;
+        if (slashes % 2 === 0) return index;
+        index += delimiter.length;
+      }
+      return -1;
+    }
+    function readMath(source, blockOnly) {
+      let open, close, display;
+      if (source.startsWith('$$')) { open = '$$'; close = '$$'; display = true; }
+      else if (source.startsWith('\\[')) { open = '\\['; close = '\\]'; display = true; }
+      else if (!blockOnly && source.startsWith('\\(')) { open = '\\('; close = '\\)'; display = false; }
+      else if (!blockOnly && source.startsWith('$') && source[1] !== '$' && source[1] && !/\s/.test(source[1])) { open = '$'; close = '$'; display = false; }
+      else return;
+      const end = findEnd(source, close, open.length);
+      if (end < 0 || end === open.length) return;
+      const expression = source.slice(open.length, end);
+      if (!display && (expression.includes('\n') || /\s$/.test(expression))) return;
+      return { raw: source.slice(0, end + close.length), expression, display };
+    }
+    function mathRenderer(token) {
+      const html = katex.renderToString(token.expression, { displayMode: token.display, throwOnError: false, trust: false });
+      const id = String(++formulaCounter);
+      formulaSources.set(id, token.expression);
+      return `<span class="math-formula${token.display ? ' math-block' : ''}" data-formula-id="${id}" role="button" tabindex="0" title="单击复制 LaTeX 代码" aria-label="复制公式的 LaTeX 代码">${html}</span>`;
+    }
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add('visible');
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+    }
+    function copyWithSelection(text) {
+      const activeElement = document.activeElement;
+      const helper = document.createElement('textarea');
+      helper.value = text;
+      helper.readOnly = true;
+      helper.className = 'clipboard-helper';
+      document.body.appendChild(helper);
+      try {
+        helper.focus({ preventScroll: true });
+        helper.select();
+        helper.setSelectionRange(0, text.length);
+        if (!document.execCommand('copy')) throw new Error('复制未获允许');
+      } finally {
+        helper.remove();
+        if (activeElement && activeElement.isConnected) activeElement.focus({ preventScroll: true });
+      }
+    }
+    async function copyFormula(formula) {
+      const latex = formulaSources.get(formula.dataset.formulaId);
+      if (typeof latex !== 'string') return;
+      try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try { await navigator.clipboard.writeText(latex); }
+          catch { copyWithSelection(latex); }
+        } else {
+          copyWithSelection(latex);
+        }
+        showToast('已复制 LaTeX 代码');
+      } catch {
+        showToast('复制失败，请从左侧编辑区手动复制该公式。');
+      }
+    }
+    function handleFormulaCopy(event) {
+      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+      const formula = event.target.closest('.math-formula[data-formula-id]');
+      if (!formula || !preview.contains(formula)) return;
+      event.preventDefault();
+      copyFormula(formula);
+    }
+    preview.addEventListener('click', handleFormulaCopy);
+    preview.addEventListener('keydown', handleFormulaCopy);
+    function setup() {
+      if (!window.marked || !window.katex || !window.DOMPurify) {
+        showNotice('公式或 Markdown 渲染组件加载失败。请检查网络连接后刷新页面；这些组件通过 jsDelivr CDN 加载。');
+        preview.textContent = '渲染组件尚未加载，仍可编辑和保存 Markdown。';
+        return false;
+      }
+      marked.use({ extensions: [
+        { name: 'mathBlock', level: 'block', tokenizer(source) { const m = readMath(source, true); if (m) return { type: 'mathBlock', ...m }; }, renderer: mathRenderer },
+        { name: 'mathInline', level: 'inline', start(source) { const hits = [source.indexOf('$'), source.indexOf('\\('), source.indexOf('\\[')].filter(i => i >= 0); return hits.length ? Math.min(...hits) : undefined; }, tokenizer(source) { const m = readMath(source, false); if (m) return { type: 'mathInline', ...m }; }, renderer: mathRenderer }
+      ] });
+      return true;
+    }
+    let ready = false;
+    function render() {
+      if (!ready) return;
+      const previousSources = formulaSources;
+      formulaSources = new Map();
+      try {
+        preview.innerHTML = DOMPurify.sanitize(marked.parse(editor.value));
+        showNotice('');
+      } catch (error) {
+        formulaSources = previousSources;
+        showNotice('渲染失败：' + error.message);
+      }
+    }
+    async function loadFile(file) {
+      if (!file) return;
+      try {
+        editor.value = await file.text();
+        currentName = file.name;
+        filename.textContent = currentName;
+        render();
+      } catch (error) { showNotice('无法读取文件：' + error.message); }
+    }
+    document.getElementById('open').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileInput.value = ''; });
+    editor.addEventListener('input', render);
+    document.getElementById('example').addEventListener('click', () => { editor.value = example; currentName = '未命名.md'; filename.textContent = currentName; render(); });
+    document.getElementById('save').addEventListener('click', () => {
+      const url = URL.createObjectURL(new Blob([editor.value], { type: 'text/markdown;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = /\.(md|markdown)$/i.test(currentName) ? currentName : currentName.replace(/\.[^.]+$/, '') + '.md'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    document.getElementById('print').addEventListener('click', () => window.print());
+    let dragDepth = 0;
+    document.addEventListener('dragenter', event => { event.preventDefault(); dragDepth++; document.getElementById('panels').classList.add('drop-active'); });
+    document.addEventListener('dragover', event => event.preventDefault());
+    document.addEventListener('dragleave', event => { event.preventDefault(); if (--dragDepth <= 0) { dragDepth = 0; document.getElementById('panels').classList.remove('drop-active'); } });
+    document.addEventListener('drop', event => { event.preventDefault(); dragDepth = 0; document.getElementById('panels').classList.remove('drop-active'); loadFile(event.dataTransfer.files[0]); });
+    editor.value = example;
+    preview.textContent = '正在加载渲染组件…';
+    function initialize() {
+      ready = setup();
+      render();
+    }
+    // defer 脚本在 HTML 解析完成后执行；等待它们执行完毕再初始化。
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialize, { once: true });
+    } else {
+      initialize();
+    }
+  </script>
+</body>
+</html>
