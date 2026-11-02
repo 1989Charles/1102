@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f7fc">
+  <title>矩阵求逆 · 3×3 / 4×4 逆矩阵计算器</title>
+  <style>
+:root {
+  --bg: #f4f6fc;
+  --surface: #ffffff;
+  --surface-soft: #f7f9fe;
+  --surface-blue: #f1f5ff;
+  --ink: #131b31;
+  --ink-soft: #34405c;
+  --muted: #737d96;
+  --muted-light: #9aa3b8;
+  --line: #e2e7f1;
+  --line-strong: #cfd6e6;
+  --primary: #2f59e8;
+  --primary-deep: #1d3fc4;
+  --primary-soft: #e9eeff;
+  --accent: #0f9f8f;
+  --accent-soft: #e4f7f3;
+  --danger: #c93d4a;
+  --danger-soft: #fff1f2;
+  --warning: #9a6210;
+  --warning-soft: #fff8e8;
+  --shadow-lg: 0 24px 60px rgba(31, 51, 101, 0.09), 0 4px 14px rgba(31, 51, 101, 0.04);
+  --shadow-sm: 0 8px 22px rgba(35, 60, 130, 0.08);
+  --radius-xl: 26px;
+  --radius-lg: 17px;
+  --radius-md: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--bg);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 520px at 92% -6%, rgba(66, 107, 255, 0.14), transparent 66%),
+    radial-gradient(760px 500px at -8% 38%, rgba(15, 159, 143, 0.08), transparent 64%),
+    var(--bg);
+  font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(45, 69, 130, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 69, 130, 0.04) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 76%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page {
+  position: relative;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 28px;
+}
+
+/* Header */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 17px;
+  background: linear-gradient(145deg, #173475 0%, #2f5bea 62%, #4b7bff 100%);
+  box-shadow: 0 12px 26px rgba(47, 89, 232, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.brand-mark svg {
+  width: 29px;
+  height: 29px;
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(25px, 3vw, 31px);
+  font-weight: 740;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  color: #57617a;
+  border: 1px solid rgba(207, 214, 230, 0.78);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 6px 18px rgba(40, 60, 120, 0.04);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(15, 159, 143, 0.11);
+}
+
+/* Layout */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.panel {
+  position: relative;
+  border: 1px solid rgba(217, 224, 238, 0.92);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: var(--shadow-lg);
+}
+
+.input-panel {
+  padding: 27px 28px 25px;
+}
+
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 654px;
+  padding: 27px 28px 24px;
+  overflow: hidden;
+}
+
+/* Section headings */
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--primary);
+  border: 1px solid rgba(47, 89, 232, 0.2);
+  border-radius: 9px;
+  background: var(--primary-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.section-heading h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.section-heading.compact {
+  gap: 10px;
+}
+
+.section-heading.compact .step-number {
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+}
+
+.section-heading.compact h2 {
+  font-size: 15px;
+}
+
+/* Order selection */
+.order-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.order-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 74px;
+  padding: 13px 15px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.order-btn:hover {
+  border-color: var(--line-strong);
+  background: #fbfcff;
+  transform: translateY(-1px);
+}
+
+.order-btn.is-active {
+  border-color: rgba(47, 89, 232, 0.46);
+  background: linear-gradient(145deg, #f4f7ff 0%, #eaf0ff 100%);
+  box-shadow: 0 6px 18px rgba(47, 89, 232, 0.09), inset 0 0 0 1px rgba(47, 89, 232, 0.04);
+}
+
+.order-size {
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.order-btn.is-active .order-size {
+  color: var(--primary-deep);
+}
+
+.order-desc {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.order-check {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: #fff;
+  transition: all 180ms ease;
+}
+
+.order-btn.is-active .order-check {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 89, 232, 0.1);
+}
+
+.order-btn.is-active .order-check::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2.5px;
+  width: 4px;
+  height: 7px;
+  border-right: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(42deg);
+}
+
+.divider {
+  height: 1px;
+  margin: 24px 0 22px;
+  background: linear-gradient(90deg, var(--line), rgba(226, 231, 241, 0.25));
+}
+
+.matrix-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matrix-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.text-btn {
+  padding: 4px 2px;
+  color: var(--primary);
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.text-btn:hover {
+  color: var(--primary-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tool-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--line);
+}
+
+/* Matrix input */
+.matrix-input-shell {
+  position: relative;
+  width: min(100%, 352px);
+  margin: 20px auto 0;
+  padding: 7px 20px;
+}
+
+.matrix-input-shell::before,
+.matrix-input-shell::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 11px;
+  border: 1.5px solid #8e99af;
+  pointer-events: none;
+}
+
+.matrix-input-shell::before {
+  left: 0;
+  border-right: 0;
+  border-radius: 5px 0 0 5px;
+}
+
+.matrix-input-shell::after {
+  right: 0;
+  border-left: 0;
+  border-radius: 0 5px 5px 0;
+}
+
+.matrix-input-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--order, 3), minmax(0, 1fr));
+  gap: 8px;
+}
+
+.matrix-input-grid input {
+  width: 100%;
+  min-width: 0;
+  height: clamp(46px, 4.6vw, 57px);
+  padding: 0 4px;
+  color: var(--ink);
+  border: 1px solid #dfe5f0;
+  border-radius: 10px;
+  outline: 0;
+  background: #f8fafe;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.matrix-input-grid input::placeholder {
+  color: #b3bbcb;
+  font-weight: 500;
+}
+
+.matrix-input-grid input:hover {
+  border-color: #cbd4e5;
+  background: #fff;
+}
+
+.matrix-input-grid input:focus {
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(47, 89, 232, 0.12);
+}
+
+.matrix-input-grid input.invalid {
+  border-color: rgba(201, 61, 74, 0.65);
+  background: #fff9f9;
+  box-shadow: 0 0 0 3px rgba(201, 61, 74, 0.09);
+}
+
+.input-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 13px 0 0;
+  color: var(--muted-light);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.input-hint svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.input-hint code {
+  padding: 1px 4px;
+  color: #6c7690;
+  border-radius: 4px;
+  background: #f2f5fa;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.primary-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  height: 53px;
+  margin-top: 18px;
+  overflow: hidden;
+  color: #fff;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3b67f4 0%, #2449d4 58%, #1b3ac0 100%);
+  box-shadow: 0 12px 26px rgba(40, 78, 218, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 170ms ease, box-shadow 170ms ease, filter 170ms ease;
+}
+
+.primary-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -55%;
+  width: 38%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transform: skewX(-18deg);
+  transition: left 500ms ease;
+}
+
+.primary-btn:hover {
+  box-shadow: 0 16px 30px rgba(40, 78, 218, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.primary-btn:hover::after {
+  left: 120%;
+}
+
+.primary-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.97);
+}
+
+.primary-btn:focus-visible,
+.order-btn:focus-visible,
+.text-btn:focus-visible,
+.format-toggle button:focus-visible,
+.copy-btn:focus-visible,
+.stale-hint button:focus-visible {
+  outline: 2px solid rgba(47, 89, 232, 0.55);
+  outline-offset: 2px;
+}
+
+.primary-btn svg {
+  width: 19px;
+  height: 19px;
+  transition: transform 170ms ease;
+}
+
+.primary-btn:hover svg {
+  transform: translateX(2px);
+}
+
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 11px 13px;
+  color: #a52d39;
+  border: 1px solid #f6d5d9;
+  border-radius: 11px;
+  background: var(--danger-soft);
+  font-size: 12px;
+  line-height: 1.55;
+  animation: slide-down 180ms ease both;
+}
+
+.error-box svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+/* Result panel */
+.result-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.format-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e8ecf5;
+  border-radius: 9px;
+  background: #f5f7fc;
+}
+
+.format-toggle button {
+  min-width: 37px;
+  padding: 4px 8px;
+  color: var(--muted);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.format-toggle button.is-active {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(47, 67, 130, 0.11);
+}
+
+.stale-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 9px 12px;
+  color: var(--warning);
+  border: 1px solid #f1dfb9;
+  border-radius: 10px;
+  background: var(--warning-soft);
+  font-size: 11.5px;
+  animation: slide-down 180ms ease both;
+}
+
+.stale-hint button {
+  flex: 0 0 auto;
+  padding: 2px 0;
+  color: #7c4d08;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.empty-state {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 12px 26px;
+  text-align: center;
+}
+
+.empty-visual {
+  position: relative;
+  width: 170px;
+  height: 138px;
+  margin-bottom: 17px;
+}
+
+.empty-visual::before {
+  content: "";
+  position: absolute;
+  top: 17px;
+  left: 30px;
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74, 113, 255, 0.12), transparent 68%);
+}
+
+.ghost-matrix {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 33px);
+  gap: 6px;
+  padding: 18px 20px;
+  transform: translate(10px, 10px);
+}
+
+.ghost-matrix::before,
+.ghost-matrix::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 8px;
+  border: 1.5px solid #c6cede;
+}
+
+.ghost-matrix::before {
+  left: 0;
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.ghost-matrix::after {
+  right: 0;
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.ghost-matrix span {
+  width: 33px;
+  height: 33px;
+  border: 1px solid #e1e6f0;
+  border-radius: 7px;
+  background: #f7f9fd;
+}
+
+.ghost-matrix span:nth-child(2),
+.ghost-matrix span:nth-child(6),
+.ghost-matrix span:nth-child(8) {
+  background: #eef2fb;
+}
+
+.ghost-matrix .ghost-accent {
+  border-color: rgba(47, 89, 232, 0.26);
+  background: linear-gradient(145deg, #e1e9ff, #d5e0ff);
+  box-shadow: 0 5px 13px rgba(47, 89, 232, 0.12);
+}
+
+.empty-badge {
+  position: absolute;
+  z-index: 2;
+  right: 4px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  color: var(--primary-deep);
+  border: 1px solid rgba(47, 89, 232, 0.17);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f2f5ff, #e4ebff);
+  box-shadow: 0 8px 18px rgba(47, 89, 232, 0.12);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.empty-badge sup {
+  font-size: 10px;
+}
+
+.empty-state h3 {
+  margin: 0 0 7px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.empty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.empty-tags span {
+  padding: 4px 9px;
+  color: #7b859c;
+  border: 1px solid #e7ebf4;
+  border-radius: 999px;
+  background: #fafbfe;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+/* Result */
+.result-content {
+  padding-top: 22px;
+  animation: reveal 360ms cubic-bezier(0.2, 0.72, 0.3, 1) both;
+}
+
+.result-meta {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.metric-card {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 15px;
+  border: 1px solid #e6ebf5;
+  border-radius: 13px;
+  background: linear-gradient(150deg, #fafbff 0%, #f4f7ff 100%);
+}
+
+.metric-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.metric-value {
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  color: var(--ink);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  scrollbar-width: thin;
+}
+
+.metric-value.is-compact {
+  font-size: 16px;
+}
+
+.metric-value.is-tiny {
+  font-size: 12px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  color: #087a6d;
+  border: 1px solid #cceee7;
+  border-radius: 13px;
+  background: var(--accent-soft);
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.status-pill svg {
+  width: 14px;
+  height: 14px;
+}
+
+.equation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 29px 0 25px;
+}
+
+.equation-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.eq-name {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-style: italic;
+  letter-spacing: -0.02em;
+}
+
+.eq-name sup {
+  font-size: 12px;
+  font-style: normal;
+}
+
+.eq-equals {
+  color: var(--muted-light);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+}
+
+.matrix-output-shell {
+  position: relative;
+  padding: 7px 17px;
+}
+
+.matrix-output-shell::before,
+.matrix-output-shell::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 9px;
+  border: 1.5px solid #8490a8;
+}
+
+.matrix-output-shell::before {
+  left: 0;
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.matrix-output-shell::after {
+  right: 0;
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.result-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: repeat(var(--order, 3), minmax(0, 1fr));
+  gap: 5px;
+}
+
+.result-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 5px;
+  overflow: auto;
+  color: #17213a;
+  border: 1px solid #ebeff7;
+  border-radius: 9px;
+  background: #f9fafe;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  scrollbar-width: thin;
+}
+
+.result-cell.is-compact {
+  font-size: 13px;
+}
+
+.result-cell.is-tiny {
+  font-size: 10px;
+}
+
+.result-row:nth-child(even) .result-cell {
+  background: #f7f9fe;
+}
+
+.format-note {
+  margin: -6px 0 0;
+  color: var(--muted-light);
+  font-size: 10.5px;
+  text-align: center;
+}
+
+.result-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  color: #59647d;
+  border: 1px solid #e2e7f1;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.copy-btn:hover {
+  color: var(--primary);
+  border-color: rgba(47, 89, 232, 0.28);
+  background: #f8faff;
+  transform: translateY(-1px);
+}
+
+.copy-btn.is-copied {
+  color: #087a6d;
+  border-color: #cceee7;
+  background: var(--accent-soft);
+}
+
+.copy-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Fractions */
+.fraction-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.fraction-sign {
+  font-size: 0.9em;
+  transform: translateY(-1px);
+}
+
+.fraction-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.76em;
+  line-height: 1.13;
+}
+
+.fraction-num {
+  padding: 0 3px 1px;
+}
+
+.fraction-den {
+  padding: 1px 3px 0;
+  border-top: 1.25px solid currentColor;
+}
+
+.decimal-value {
+  font-size: 0.92em;
+  letter-spacing: -0.02em;
+}
+
+.approx-sign {
+  margin-right: 2px;
+  color: var(--muted);
+  font-size: 0.78em;
+  font-weight: 500;
+}
+
+.metric-value .fraction-stack {
+  font-size: 0.73em;
+}
+
+/* Singular state */
+.singular-state {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 35px 16px;
+  text-align: center;
+  animation: reveal 300ms ease both;
+}
+
+.singular-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  color: var(--danger);
+  border: 1px solid #f5d5d9;
+  border-radius: 18px;
+  background: var(--danger-soft);
+}
+
+.singular-icon svg {
+  width: 29px;
+  height: 29px;
+}
+
+.singular-state h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 720;
+}
+
+.singular-state p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+
+.singular-det {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 9px 18px;
+  border: 1px solid #f1dadd;
+  border-radius: 10px;
+  background: #fffafa;
+}
+
+.singular-det span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.singular-det strong {
+  color: var(--danger);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 19px;
+}
+
+/* Footer */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 22px 0 0;
+  color: #909aae;
+  font-size: 10.5px;
+}
+
+.footer-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #c1c9d8;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 950px) {
+  .page {
+    width: min(680px, calc(100% - 40px));
+    padding-top: 27px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .result-panel {
+    min-height: 560px;
+  }
+
+  .empty-state {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    width: calc(100% - 28px);
+    padding: 21px 0 18px;
+  }
+
+  .site-header {
+    align-items: flex-start;
+    margin-bottom: 21px;
+  }
+
+  .brand-mark {
+    width: 47px;
+    height: 47px;
+    border-radius: 14px;
+  }
+
+  .brand-mark svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .header-badge {
+    display: none;
+  }
+
+  .input-panel,
+  .result-panel {
+    padding: 21px 19px;
+    border-radius: 21px;
+  }
+
+  .result-panel {
+    min-height: 500px;
+  }
+
+  .order-btn {
+    min-height: 68px;
+    padding: 11px 12px;
+  }
+
+  .order-size {
+    font-size: 16px;
+  }
+
+  .order-check {
+    top: 11px;
+    right: 11px;
+    width: 15px;
+    height: 15px;
+  }
+
+  .order-btn.is-active .order-check::after {
+    left: 4px;
+    top: 2px;
+  }
+
+  .matrix-input-shell {
+    padding: 7px 16px;
+    margin-top: 19px;
+  }
+
+  .matrix-input-grid {
+    gap: 6px;
+  }
+
+  .matrix-input-grid input {
+    height: 48px;
+    font-size: 14px;
+  }
+
+  .matrix-tools {
+    gap: 7px;
+  }
+
+  .section-heading p {
+    font-size: 11.5px;
+  }
+
+  .input-hint {
+    align-items: flex-start;
+    margin-top: 11px;
+  }
+
+  .equation {
+    gap: 9px;
+    margin: 24px 0 21px;
+  }
+
+  .eq-name {
+    font-size: 20px;
+  }
+
+  .matrix-output-shell {
+    padding: 6px 12px;
+  }
+
+  .result-cell {
+    font-size: 16px;
+  }
+
+  .result-grid {
+    gap: 4px;
+  }
+
+  .result-row {
+    gap: 4px;
+  }
+
+  .format-toggle {
+    align-self: flex-start;
+  }
+
+  .status-pill {
+    padding: 0 9px;
+    font-size: 10.5px;
+  }
+
+  .metric-value {
+    font-size: 18px;
+  }
+
+  .empty-state {
+    min-height: 340px;
+  }
+}
+
+@media (max-width: 460px) {
+  .matrix-input-shell {
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .matrix-input-grid {
+    gap: 5px;
+  }
+
+  .equation {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .equation-label {
+    gap: 7px;
+  }
+
+  .matrix-output-shell {
+    padding: 6px 14px;
+  }
+
+  .result-cell {
+    min-width: 52px;
+    min-height: 54px;
+  }
+
+  .result-meta {
+    flex-direction: column;
+  }
+
+  .status-pill {
+    min-height: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M8 5H5v22h3M24 5h3v22h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="11" r="1.5" fill="currentColor"/>
+            <circle cx="20" cy="11" r="1.5" fill="currentColor" opacity=".55"/>
+            <circle cx="12" cy="21" r="1.5" fill="currentColor" opacity=".55"/>
+            <circle cx="20" cy="21" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">Linear Algebra Tool</p>
+          <h1>矩阵求逆</h1>
+        </div>
+      </div>
+      <div class="header-badge">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        本地计算 · 精准分数
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel input-panel" aria-labelledby="inputTitle">
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div>
+            <h2 id="inputTitle">设置矩阵</h2>
+            <p>选择阶数并输入矩阵 A 的元素</p>
+          </div>
+        </div>
+
+        <div class="order-options" role="radiogroup" aria-label="选择方阵阶数">
+          <button class="order-btn is-active" type="button" role="radio" aria-checked="true" data-order="3">
+            <span class="order-size">3 × 3</span>
+            <span class="order-desc">三阶方阵</span>
+            <span class="order-check" aria-hidden="true"></span>
+          </button>
+          <button class="order-btn" type="button" role="radio" aria-checked="false" data-order="4">
+            <span class="order-size">4 × 4</span>
+            <span class="order-desc">四阶方阵</span>
+            <span class="order-check" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <div class="divider" role="presentation"></div>
+
+        <div class="matrix-heading">
+          <div class="section-heading compact">
+            <span class="step-number" aria-hidden="true">02</span>
+            <div>
+              <h2>输入元素</h2>
+              <p>空单元格按 0 计算</p>
+            </div>
+          </div>
+          <div class="matrix-tools">
+            <button type="button" class="text-btn" id="sampleBtn">填入示例</button>
+            <span class="tool-divider" aria-hidden="true"></span>
+            <button type="button" class="text-btn" id="clearBtn">清空</button>
+          </div>
+        </div>
+
+        <div class="matrix-input-shell">
+          <div class="matrix-input-grid" id="matrixInput" aria-label="矩阵元素输入区"></div>
+        </div>
+
+        <p class="input-hint">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M8 7.2v4M8 4.7v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          支持整数、小数与分数，例如 <code>-2</code>、<code>0.75</code>、<code>3/4</code>
+        </p>
+
+        <button type="button" class="primary-btn" id="calculateBtn">
+          <span>求逆矩阵</span>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M4 10h11M11 5.5 15.5 10 11 14.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="error-box" id="errorBox" role="alert" hidden>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 3.2 18 17H2L10 3.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M10 8v4M10 14.5v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span id="errorText"></span>
+        </div>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="resultTitle">
+        <div class="result-heading">
+          <div class="section-heading">
+            <span class="step-number" aria-hidden="true">03</span>
+            <div>
+              <h2 id="resultTitle">计算结果</h2>
+              <p>逆矩阵 A<sup>-1</sup> 与行列式</p>
+            </div>
+          </div>
+          <div class="format-toggle" id="formatToggle" role="group" aria-label="结果格式" hidden>
+            <button type="button" class="is-active" data-format="fraction" aria-pressed="true">分数</button>
+            <button type="button" data-format="decimal" aria-pressed="false">小数</button>
+          </div>
+        </div>
+
+        <div class="stale-hint" id="staleHint" hidden>
+          <span>矩阵已修改，当前结果可能已过期</span>
+          <button type="button" id="recalcBtn">重新计算</button>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+          <div class="empty-visual" aria-hidden="true">
+            <div class="ghost-matrix">
+              <span></span><span></span><span></span>
+              <span></span><span class="ghost-accent"></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+            <div class="empty-badge">A<sup>-1</sup></div>
+          </div>
+          <h3>等待计算</h3>
+          <p>在左侧输入矩阵元素，<br>点击「求逆矩阵」查看结果。</p>
+          <div class="empty-tags" aria-hidden="true">
+            <span>高斯－约当消元</span>
+            <span>精确分数</span>
+          </div>
+        </div>
+
+        <div class="result-content" id="resultContent" hidden>
+          <div class="result-meta">
+            <div class="metric-card">
+              <span class="metric-label">行列式 |A|</span>
+              <div class="metric-value" id="detValue"></div>
+            </div>
+            <span class="status-pill">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="m3.5 8.3 3 3 6-6.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              矩阵可逆
+            </span>
+          </div>
+
+          <div class="equation">
+            <div class="equation-label">
+              <span class="eq-name">A<sup>-1</sup></span>
+              <span class="eq-equals">=</span>
+            </div>
+            <div class="matrix-output-shell">
+              <div class="result-grid" id="resultMatrix" role="grid" aria-label="逆矩阵" aria-readonly="true"></div>
+            </div>
+          </div>
+
+          <p class="format-note" id="formatNote">分数结果为精确值</p>
+
+          <div class="result-actions">
+            <button type="button" class="copy-btn" id="copyBtn">
+              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <rect x="6.2" y="5.2" width="8.3" height="9.3" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M4.4 11.9H4a1.5 1.5 0 0 1-1.5-1.5V4a1.5 1.5 0 0 1 1.5-1.5h5.9A1.5 1.5 0 0 1 11.4 4v.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span id="copyLabel">复制结果</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="singular-state" id="singularState" hidden>
+          <div class="singular-icon" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="none">
+              <path d="M14 4.5 24.5 23h-21L14 4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M14 11v5M14 19.7v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>矩阵不可逆</h3>
+          <p>该矩阵为奇异矩阵，行列式 |A| = 0，<br>因此不存在逆矩阵。</p>
+          <div class="singular-det">
+            <span>行列式</span>
+            <strong>0</strong>
+          </div>
+        </div>
+
+        <p class="sr-only" id="announcement" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>仅支持 3 × 3 / 4 × 4 方阵</span>
+      <span class="footer-dot" aria-hidden="true"></span>
+      <span>高斯－约当消元法</span>
+      <span class="footer-dot" aria-hidden="true"></span>
+      <span>BigInt 精确分数运算</span>
+    </footer>
+  </div>
+
+  <script>
+"use strict";
+
+/* -------------------------------------------------------------------------- */
+/*  Exact fraction arithmetic (BigInt)                                        */
+/* -------------------------------------------------------------------------- */
+
+class Fraction {
+  constructor(numerator, denominator = 1n) {
+    if (denominator === 0n) {
+      throw new RangeError("分母不能为零");
+    }
+    if (denominator < 0n) {
+      numerator = -numerator;
+      denominator = -denominator;
+    }
+    const divisor = gcd(numerator, denominator);
+    this.n = numerator / divisor;
+    this.d = denominator / divisor;
+  }
+
+  add(other) {
+    return new Fraction(
+      this.n * other.d + other.n * this.d,
+      this.d * other.d
+    );
+  }
+
+  sub(other) {
+    return new Fraction(
+      this.n * other.d - other.n * this.d,
+      this.d * other.d
+    );
+  }
+
+  mul(other) {
+    return new Fraction(this.n * other.n, this.d * other.d);
+  }
+
+  div(other) {
+    if (other.isZero()) {
+      throw new RangeError("不能除以零");
+    }
+    return new Fraction(this.n * other.d, this.d * other.n);
+  }
+
+  isZero() {
+    return this.n === 0n;
+  }
+}
+
+Fraction.ZERO = new Fraction(0n);
+Fraction.ONE = new Fraction(1n);
+
+function bigAbs(value) {
+  return value < 0n ? -value : value;
+}
+
+function gcd(a, b) {
+  a = bigAbs(a);
+  b = bigAbs(b);
+  while (b !== 0n) {
+    const remainder = a % b;
+    a = b;
+    b = remainder;
+  }
+  return a === 0n ? 1n : a;
+}
+
+function fractionToString(fraction) {
+  return fraction.d === 1n
+    ? fraction.n.toString()
+    : `${fraction.n.toString()}/${fraction.d.toString()}`;
+}
+
+function decimalString(fraction, precision = 6) {
+  const negative = fraction.n < 0n;
+  const numerator = bigAbs(fraction.n);
+  const scale = 10n ** BigInt(precision);
+  const rounded = (numerator * scale + fraction.d / 2n) / fraction.d;
+  const whole = rounded / scale;
+  const remainder = rounded % scale;
+  let output = whole.toString();
+
+  if (remainder !== 0n) {
+    const digits = remainder
+      .toString()
+      .padStart(precision, "0")
+      .replace(/0+$/, "");
+    output += `.${digits}`;
+  }
+
+  return negative && rounded !== 0n ? `-${output}` : output;
+}
+
+function displayDecimal(fraction) {
+  return decimalString(fraction).replace("-", "−");
+}
+
+function fractionMarkup(fraction) {
+  const negative = fraction.n < 0n;
+  const numerator = bigAbs(fraction.n);
+
+  if (fraction.d === 1n) {
+    return `<span class="integer-value">${negative ? "−" : ""}${numerator.toString()}</span>`;
+  }
+
+  return [
+    '<span class="fraction-value">',
+    negative ? '<span class="fraction-sign">−</span>' : "",
+    '<span class="fraction-stack">',
+    `<span class="fraction-num">${numerator.toString()}</span>`,
+    `<span class="fraction-den">${fraction.d.toString()}</span>`,
+    "</span>",
+    "</span>"
+  ].join("");
+}
+
+function valueMarkup(fraction, format) {
+  if (format === "decimal") {
+    return `<span class="decimal-value">${displayDecimal(fraction)}</span>`;
+  }
+  return fractionMarkup(fraction);
+}
+
+function valueTitle(fraction) {
+  const exact = `精确值：${fractionToString(fraction)}`;
+  return fraction.d === 1n
+    ? exact
+    : `${exact}；近似值：${decimalString(fraction)}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Input parsing                                                             */
+/* -------------------------------------------------------------------------- */
+
+function parseEntry(raw) {
+  const value = raw.trim().replace(/\s+/g, "");
+  if (value === "") {
+    return { ok: true, value: Fraction.ZERO };
+  }
+
+  const fractionMatch = value.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+  if (fractionMatch) {
+    const denominator = toBigInt(fractionMatch[2]);
+    if (denominator === 0n) {
+      return { ok: false, message: "分母不能为 0" };
+    }
+    return {
+      ok: true,
+      value: new Fraction(toBigInt(fractionMatch[1]), denominator)
+    };
+  }
+
+  const decimalMatch = value.match(
+    /^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/
+  );
+
+  if (!decimalMatch) {
+    if (value.includes("/")) {
+      return { ok: false, message: "分数格式应为 a/b，例如 3/4" };
+    }
+    return {
+      ok: false,
+      message: "请输入整数、小数或分数，例如 -2、0.75、3/4"
+    };
+  }
+
+  const sign = decimalMatch[1] === "-" ? -1n : 1n;
+  const integerPart = decimalMatch[2] || "0";
+  const fractionalPart =
+    decimalMatch[3] !== undefined ? decimalMatch[3] : decimalMatch[4] || "";
+  const exponent = decimalMatch[5] ? Number(decimalMatch[5]) : 0;
+
+  if (!Number.isInteger(exponent) || Math.abs(exponent) > 30) {
+    return { ok: false, message: "指数超出可计算范围" };
+  }
+
+  let numerator = toBigInt(integerPart + fractionalPart) * sign;
+  let denominator = 10n ** BigInt(fractionalPart.length);
+
+  if (exponent > 0) {
+    numerator *= 10n ** BigInt(exponent);
+  } else if (exponent < 0) {
+    denominator *= 10n ** BigInt(-exponent);
+  }
+
+  return { ok: true, value: new Fraction(numerator, denominator) };
+}
+
+function toBigInt(text) {
+  return BigInt(text.charAt(0) === "+" ? text.slice(1) : text);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Matrix math                                                               */
+/* -------------------------------------------------------------------------- */
+
+function determinant(matrix) {
+  const size = matrix.length;
+
+  if (size === 1) {
+    return matrix[0][0];
+  }
+
+  if (size === 2) {
+    return matrix[0][0]
+      .mul(matrix[1][1])
+      .sub(matrix[0][1].mul(matrix[1][0]));
+  }
+
+  let result = Fraction.ZERO;
+
+  for (let column = 0; column < size; column += 1) {
+    if (matrix[0][column].isZero()) {
+      continue;
+    }
+
+    const minor = matrix
+      .slice(1)
+      .map((row) => row.filter((_, index) => index !== column));
+    const term = matrix[0][column].mul(determinant(minor));
+
+    result = column % 2 === 0 ? result.add(term) : result.sub(term);
+  }
+
+  return result;
+}
+
+function invertMatrix(matrix) {
+  const size = matrix.length;
+  const augmented = matrix.map((row, rowIndex) => [
+    ...row,
+    ...Array.from({ length: size }, (_, columnIndex) =>
+      new Fraction(rowIndex === columnIndex ? 1n : 0n)
+    )
+  ]);
+
+  for (let column = 0; column < size; column += 1) {
+    let pivotRow = column;
+    while (pivotRow < size && augmented[pivotRow][column].isZero()) {
+      pivotRow += 1;
+    }
+
+    if (pivotRow === size) {
+      return null;
+    }
+
+    if (pivotRow !== column) {
+      [augmented[column], augmented[pivotRow]] = [
+        augmented[pivotRow],
+        augmented[column]
+      ];
+    }
+
+    const pivot = augmented[column][column];
+    if (pivot.d !== 1n || pivot.n !== 1n) {
+      for (let index = 0; index < size * 2; index += 1) {
+        augmented[column][index] = augmented[column][index].div(pivot);
+      }
+    }
+
+    for (let rowIndex = 0; rowIndex < size; rowIndex += 1) {
+      if (rowIndex === column) {
+        continue;
+      }
+
+      const factor = augmented[rowIndex][column];
+      if (factor.isZero()) {
+        continue;
+      }
+
+      for (let index = 0; index < size * 2; index += 1) {
+        augmented[rowIndex][index] = augmented[rowIndex][index].sub(
+          factor.mul(augmented[column][index])
+        );
+      }
+    }
+  }
+
+  return augmented.map((row) => row.slice(size));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  App state and DOM                                                         */
+/* -------------------------------------------------------------------------- */
+
+const state = {
+  order: 3,
+  format: "fraction",
+  view: "empty",
+  result: null,
+  determinant: null
+};
+
+const elements = {
+  matrixInput: document.getElementById("matrixInput"),
+  orderButtons: [...document.querySelectorAll(".order-btn")],
+  sampleBtn: document.getElementById("sampleBtn"),
+  clearBtn: document.getElementById("clearBtn"),
+  calculateBtn: document.getElementById("calculateBtn"),
+  errorBox: document.getElementById("errorBox"),
+  errorText: document.getElementById("errorText"),
+  emptyState: document.getElementById("emptyState"),
+  resultContent: document.getElementById("resultContent"),
+  singularState: document.getElementById("singularState"),
+  formatToggle: document.getElementById("formatToggle"),
+  formatButtons: [...document.querySelectorAll("#formatToggle button")],
+  resultMatrix: document.getElementById("resultMatrix"),
+  detValue: document.getElementById("detValue"),
+  formatNote: document.getElementById("formatNote"),
+  staleHint: document.getElementById("staleHint"),
+  recalcBtn: document.getElementById("recalcBtn"),
+  copyBtn: document.getElementById("copyBtn"),
+  copyLabel: document.getElementById("copyLabel"),
+  announcement: document.getElementById("announcement"),
+  resultPanel: document.querySelector(".result-panel")
+};
+
+const sampleMatrices = {
+  3: [
+    ["2", "1", "0"],
+    ["1", "3", "1"],
+    ["0", "1", "2"]
+  ],
+  4: [
+    ["4", "1", "0", "1"],
+    ["1", "3", "1", "0"],
+    ["0", "1", "3", "1"],
+    ["1", "0", "1", "4"]
+  ]
+};
+
+let copyFeedbackTimer = null;
+
+/* -------------------------------------------------------------------------- */
+/*  Rendering                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function buildInputGrid(values = null) {
+  const size = state.order;
+  const fragment = document.createDocumentFragment();
+
+  elements.matrixInput.style.setProperty("--order", size);
+  elements.matrixInput.replaceChildren();
+
+  for (let row = 0; row < size; row += 1) {
+    for (let column = 0; column < size; column += 1) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.inputMode = "text";
+      input.autocomplete = "off";
+      input.spellcheck = false;
+      input.maxLength = 14;
+      input.placeholder = "0";
+      input.dataset.row = String(row);
+      input.dataset.column = String(column);
+      input.setAttribute("aria-label", `第 ${row + 1} 行，第 ${column + 1} 列`);
+      if (values && values[row] && values[row][column] !== undefined) {
+        input.value = values[row][column];
+      }
+      fragment.appendChild(input);
+    }
+  }
+
+  elements.matrixInput.appendChild(fragment);
+}
+
+function updateOrderSelection() {
+  elements.orderButtons.forEach((button) => {
+    const selected = Number(button.dataset.order) === state.order;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-checked", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+}
+
+function updateFormatSelection() {
+  elements.formatButtons.forEach((button) => {
+    const selected = button.dataset.format === state.format;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+}
+
+function renderResult() {
+  const size = state.result.length;
+
+  elements.resultMatrix.style.setProperty("--order", size);
+
+  elements.resultMatrix.innerHTML = state.result
+    .map((row, rowIndex) => {
+      const cells = row
+        .map((fraction, columnIndex) => {
+          const complexity = valueComplexity(fraction);
+          return `<div class="result-cell${complexity}" role="gridcell" title="${valueTitle(fraction)}" aria-label="第 ${rowIndex + 1} 行，第 ${columnIndex + 1} 列，${fractionToString(fraction)}">${valueMarkup(fraction, state.format)}</div>`;
+        })
+        .join("");
+      return `<div class="result-row" role="row">${cells}</div>`;
+    })
+    .join("");
+}
+
+function valueComplexity(fraction) {
+  const length = fractionToString(fraction).length;
+  if (length > 22) {
+    return " is-tiny";
+  }
+  if (length > 13) {
+    return " is-compact";
+  }
+  return "";
+}
+
+function renderDeterminant() {
+  const determinantValue = state.determinant;
+  const approximate =
+    state.format === "decimal" && determinantValue.d !== 1n
+      ? '<span class="approx-sign">≈</span>'
+      : "";
+
+  elements.detValue.className = `metric-value${valueComplexity(determinantValue)}`;
+  elements.detValue.innerHTML = `${approximate}${valueMarkup(determinantValue, state.format)}`;
+  elements.detValue.title = valueTitle(determinantValue);
+  elements.detValue.setAttribute("aria-label", `行列式 ${fractionToString(determinantValue)}`);
+  elements.formatNote.textContent =
+    state.format === "fraction"
+      ? "分数结果为精确值"
+      : "小数结果最多保留 6 位（四舍五入）";
+}
+
+function setView(view) {
+  state.view = view;
+  elements.emptyState.hidden = view !== "empty";
+  elements.resultContent.hidden = view !== "success";
+  elements.singularState.hidden = view !== "singular";
+  elements.formatToggle.hidden = view !== "success";
+}
+
+function resetResult() {
+  state.result = null;
+  state.determinant = null;
+  setView("empty");
+  elements.staleHint.hidden = true;
+  elements.announcement.textContent = "";
+}
+
+function showSuccess(inverse, determinantValue) {
+  state.result = inverse;
+  state.determinant = determinantValue;
+  setView("success");
+  elements.staleHint.hidden = true;
+  renderDeterminant();
+  renderResult();
+  elements.announcement.textContent = `计算完成，矩阵可逆，行列式为 ${fractionToString(determinantValue)}。`;
+  restartReveal(elements.resultContent);
+  scrollToResultOnSmallScreen();
+}
+
+function showSingular() {
+  state.result = null;
+  state.determinant = Fraction.ZERO;
+  setView("singular");
+  elements.staleHint.hidden = true;
+  elements.announcement.textContent = "计算完成。该矩阵为奇异矩阵，行列式为 0，不存在逆矩阵。";
+  restartReveal(elements.singularState);
+  scrollToResultOnSmallScreen();
+}
+
+function restartReveal(element) {
+  element.style.animation = "none";
+  void element.offsetWidth;
+  element.style.animation = "";
+}
+
+function scrollToResultOnSmallScreen() {
+  if (window.matchMedia("(max-width: 950px)").matches) {
+    window.setTimeout(() => {
+      elements.resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sidebar actions                                                           */
+/* -------------------------------------------------------------------------- */
+
+function readRawGrid() {
+  const inputs = [...elements.matrixInput.querySelectorAll("input")];
+  const size = state.order;
+  const values = [];
+
+  for (let row = 0; row < size; row += 1) {
+    values.push([]);
+    for (let column = 0; column < size; column += 1) {
+      values[row].push(inputs[row * size + column]?.value ?? "");
+    }
+  }
+
+  return values;
+}
+
+function setOrder(nextOrder) {
+  if (nextOrder === state.order) {
+    return;
+  }
+
+  const previous = readRawGrid();
+  const previousSize = state.order;
+  state.order = nextOrder;
+  updateOrderSelection();
+
+  const preserved = Array.from({ length: nextOrder }, (_, row) =>
+    Array.from({ length: nextOrder }, (_, column) =>
+      row < previousSize && column < previousSize
+        ? previous[row][column]
+        : ""
+    )
+  );
+
+  buildInputGrid(preserved);
+  hideError();
+  resetResult();
+}
+
+function fillSample() {
+  buildInputGrid(sampleMatrices[state.order]);
+  hideError();
+  resetResult();
+}
+
+function clearMatrix() {
+  buildInputGrid();
+  hideError();
+  resetResult();
+  elements.matrixInput.querySelector("input")?.focus();
+}
+
+function showError(message) {
+  elements.errorText.textContent = message;
+  elements.errorBox.hidden = false;
+}
+
+function hideError() {
+  elements.errorBox.hidden = true;
+  elements.errorText.textContent = "";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Calculation                                                               */
+/* -------------------------------------------------------------------------- */
+
+function calculate() {
+  const inputs = [...elements.matrixInput.querySelectorAll("input")];
+  const size = state.order;
+  const matrix = [];
+  let firstInvalid = null;
+  let errorMessage = "";
+
+  for (let row = 0; row < size; row += 1) {
+    matrix.push([]);
+    for (let column = 0; column < size; column += 1) {
+      const input = inputs[row * size + column];
+      const parsed = parseEntry(input.value);
+
+      input.classList.remove("invalid");
+      input.removeAttribute("aria-invalid");
+
+      if (!parsed.ok) {
+        input.classList.add("invalid");
+        input.setAttribute("aria-invalid", "true");
+        if (!firstInvalid) {
+          firstInvalid = input;
+          errorMessage = `第 ${row + 1} 行第 ${column + 1} 列：${parsed.message}`;
+        }
+        matrix[row].push(Fraction.ZERO);
+      } else {
+        matrix[row].push(parsed.value);
+      }
+    }
+  }
+
+  if (firstInvalid) {
+    showError(errorMessage);
+    firstInvalid.focus();
+    firstInvalid.select();
+    return;
+  }
+
+  hideError();
+
+  const determinantValue = determinant(matrix);
+  if (determinantValue.isZero()) {
+    showSingular();
+    return;
+  }
+
+  const inverse = invertMatrix(matrix);
+  if (!inverse) {
+    showSingular();
+    return;
+  }
+
+  showSuccess(inverse, determinantValue);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Copying                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function resultAsText() {
+  return state.result
+    .map((row) =>
+      row
+        .map((fraction) =>
+          state.format === "fraction"
+            ? fractionToString(fraction)
+            : decimalString(fraction)
+        )
+        .join("\t")
+    )
+    .join("\n");
+}
+
+async function copyResult() {
+  if (!state.result) {
+    return;
+  }
+
+  const text = `A^(-1) =\n${resultAsText()}`;
+  let copied = false;
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    }
+  } catch {
+    copied = false;
+  }
+
+  if (!copied) {
+    copied = fallbackCopy(text);
+  }
+
+  showCopyFeedback(copied);
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-1000px";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch {
+    copied = false;
+  }
+
+  textarea.remove();
+  return copied;
+}
+
+function showCopyFeedback(success) {
+  window.clearTimeout(copyFeedbackTimer);
+  elements.copyLabel.textContent = success ? "已复制" : "复制失败";
+  elements.copyBtn.classList.toggle("is-copied", success);
+
+  copyFeedbackTimer = window.setTimeout(() => {
+    elements.copyLabel.textContent = "复制结果";
+    elements.copyBtn.classList.remove("is-copied");
+  }, 1600);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Events                                                                    */
+/* -------------------------------------------------------------------------- */
+
+elements.orderButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setOrder(Number(button.dataset.order));
+  });
+});
+
+document.querySelector(".order-options").addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+    return;
+  }
+  event.preventDefault();
+  const nextOrder = state.order === 3 ? 4 : 3;
+  setOrder(nextOrder);
+  elements.orderButtons.find((button) => Number(button.dataset.order) === nextOrder)?.focus();
+});
+
+elements.sampleBtn.addEventListener("click", fillSample);
+elements.clearBtn.addEventListener("click", clearMatrix);
+elements.calculateBtn.addEventListener("click", calculate);
+elements.recalcBtn.addEventListener("click", calculate);
+elements.copyBtn.addEventListener("click", copyResult);
+
+elements.matrixInput.addEventListener("input", (event) => {
+  const input = event.target.closest("input");
+  if (!input) {
+    return;
+  }
+
+  input.classList.remove("invalid");
+  input.removeAttribute("aria-invalid");
+  hideError();
+
+  if (state.view === "success" || state.view === "singular") {
+    elements.staleHint.hidden = false;
+  }
+});
+
+elements.matrixInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    calculate();
+  }
+});
+
+elements.formatToggle.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-format]");
+  if (!button || button.dataset.format === state.format) {
+    return;
+  }
+
+  state.format = button.dataset.format;
+  updateFormatSelection();
+
+  if (state.view === "success") {
+    renderDeterminant();
+    renderResult();
+  }
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Initial render                                                            */
+/* -------------------------------------------------------------------------- */
+
+buildInputGrid();
+updateOrderSelection();
+updateFormatSelection();
+setView("empty");
+
+  </script>
+</body>
+</html>
